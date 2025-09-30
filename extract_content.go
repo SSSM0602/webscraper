@@ -28,7 +28,11 @@ func getFirstParagraphFromHTML(html string) string {
 	}
 	first_par := doc.Find("main").Find("p").First()
 	if first_par.Length() == 0 {
-		return ""	
+		first_par = doc.Find("p").First()
+	}
+
+	if first_par.Length() == 0 {
+		return ""
 	}
 	return strings.TrimSpace(first_par.Text())
 }
@@ -64,7 +68,6 @@ func getImagesFromHTML(htmlBody string, baseURL *url.URL) ([]string, error) {
 	}
 	var imgs []string
 	doc.Find("img[src]").Each(func(_ int, s *goquery.Selection) {
-			
 		src, exists := s.Attr("src")
 		if exists {
 			var full_url string
@@ -77,4 +80,29 @@ func getImagesFromHTML(htmlBody string, baseURL *url.URL) ([]string, error) {
 		}
 	})
 	return imgs, err
+}
+
+type PageData struct {
+	URL string
+	H1 string
+	FirstParagraph string
+	OutgoingLinks []string
+	ImageURLs []string
+}
+
+func extractPageData(html, pageURL string) PageData {
+	baseURL, err := url.Parse(pageURL)
+	if err != nil {
+		return PageData{}
+	}
+	images, err := getImagesFromHTML(html, baseURL)
+	links, err := getURLsFromHTML(html, baseURL)
+	res_data := PageData {
+		URL: pageURL,
+		H1: getH1FromHTML(html),
+		FirstParagraph: getFirstParagraphFromHTML(html),
+		OutgoingLinks: links,
+		ImageURLs: images,
+	}
+	return res_data
 }
