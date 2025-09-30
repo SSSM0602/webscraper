@@ -3,6 +3,8 @@ import (
 	"log"
 	"github.com/PuerkitoBio/goquery"
 	"strings"
+	"net/url"
+	"fmt"
 )
 
 func getH1FromHTML(html string) string {
@@ -29,4 +31,50 @@ func getFirstParagraphFromHTML(html string) string {
 		return ""	
 	}
 	return strings.TrimSpace(first_par.Text())
+}
+
+func getURLsFromHTML(htmlBody string, baseURL *url.URL) ([]string, error) {
+	reader := strings.NewReader(htmlBody)
+	doc, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var urls []string
+	doc.Find("a[href]").Each(func(_ int, s *goquery.Selection) {
+        // For each '<a href>' it finds, it will run this function.
+		href, exists := s.Attr("href")
+		if exists {
+			var full_url string
+			if href == baseURL.String() {
+				full_url = href
+			} else {
+				full_url = fmt.Sprintf("%s%s", baseURL.String(), href)
+			}
+			urls = append(urls, full_url)
+		}
+    })
+	return urls, err
+}
+
+func getImagesFromHTML(htmlBody string, baseURL *url.URL) ([]string, error) {
+	reader := strings.NewReader(htmlBody)
+	doc, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var imgs []string
+	doc.Find("img[src]").Each(func(_ int, s *goquery.Selection) {
+			
+		src, exists := s.Attr("src")
+		if exists {
+			var full_url string
+			if src == baseURL.String() {
+				full_url = src
+			} else {
+				full_url = fmt.Sprintf("%s%s", baseURL.String(), src)
+			}
+			imgs = append(imgs, full_url)
+		}
+	})
+	return imgs, err
 }
