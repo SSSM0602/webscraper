@@ -1,9 +1,8 @@
 package main
 import (
 	"net/url"
-	"fmt"
 	"log"
-	"path"
+	"strings"
 )
 
 func normalizeURL(url_in string) (string, error) {
@@ -11,6 +10,9 @@ func normalizeURL(url_in string) (string, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	final := fmt.Sprintf("%s%s", parsed.Host, path.Clean(parsed.Path))
-	return final, err
+	if parsed.Scheme == "" {
+		parsed.Scheme = "https"
+	}
+	parsed.Host = strings.TrimSuffix(parsed.Host, ".")
+	return parsed.String(), err
 }

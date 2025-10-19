@@ -1,12 +1,12 @@
 package main
 import (
 	"fmt"
-	"os"
 	"net/http"
 	"net/url"
 	"io"
 	"time"
 	"strings"
+	"log"
 )
 
 func getHTML(rawURL string) (string, error) {
@@ -57,27 +57,33 @@ func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
 		return 
 	}
 
-	normRaw, err := normalizeUrl(rawCurrentURL)
+	normRaw, err := normalizeURL(rawCurrentURL)
 	if err != nil {
 		fmt.Printf("Error normalizing URL: %s\n", rawCurrentURL)
 		return
 	}
-	if val, ok := pages[normRaw]; ok {
+	if _, ok := pages[normRaw]; ok {
 		pages[normRaw] += 1
 		return
 	} else {
 		pages[normRaw] = 1
-		fmt.Printf("Fetching html from: %s\n", normRaw)
+		fmt.Printf("Fetching HTML from: %s\n", normRaw)
 
 		currHTML, err := getHTML(normRaw)
 		if err != nil {
 			fmt.Printf("Error fetching HTML from URL: %s\n", normRaw)
+			log.Fatal(err)
 			return
 		}
-
-		currPageURLs, err := getURLsFromHTML(currHTML)
+		
+		rawParsedURL, err := url.Parse(rawBaseURL)
+		if err != nil {
+			fmt.Printf("Could not parse URL: %s\n", rawBaseURL)
+		}
+		currPageURLs, err := getURLsFromHTML(currHTML, rawParsedURL)
 		if err != nil {
 			fmt.Printf("Error fetching links from current page: %s\n", normRaw)
+			log.Fatal(err)
 			return
 		}
 		for _, url := range currPageURLs {
