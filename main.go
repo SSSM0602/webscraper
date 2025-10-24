@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"net/url"
+	"sync"
 )
 func main() {
 	args := os.Args[1:]
@@ -12,13 +14,30 @@ func main() {
 	} else if len(args) < 1 {
 		fmt.Println("no website provided")
 		os.Exit(1)
-	} else {
-		fmt.Println("starting crawl")
-		pages := make(map[string]int, 10)
-		crawlPage(args[0], args[0], pages)
-		for url, count := range pages {
-			fmt.Printf("%s %d\n", url, count)
-		}
-		fmt.Println()
+	}  
+	rawBaseURL := args[0]
+	fmt.Println("starting crawl")
+
+	parsedBaseURL, err := url.Parse(rawBaseURL)
+	if err != nil {
+		fmt.Printf("Invalid base URL: %v\n", err)
+		os.Exit(1)
+	}
+
+	cfg := &config{
+		pages:              make(map[string]PageData),
+		baseURL:            parsedBaseURL,
+		mu:                 &sync.Mutex{},
+		concurrencyControl: make(chan struct{}, 1), // limit concurrent crawls
+		wg:                 &sync.WaitGroup{},
+	}
+
+	cfg.wg.Add(1)
+	go cfg.crawlPage(parsedBaseURL.String())
+
+	cfg.wg.Wait()
+
+	for url, count := range cfg.pages {
+		fmt.Printf("%s %d\n", url, count)
 	}
 } 
