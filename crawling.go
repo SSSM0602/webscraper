@@ -16,6 +16,7 @@ type config struct {
 	mu                 *sync.Mutex
 	concurrencyControl chan struct{}
 	wg                 *sync.WaitGroup
+	maxPages		   int
 }
 
 func getHTML(rawURL string) (string, error) {
@@ -53,6 +54,10 @@ func (cfg *config) addPageVisit(normalizedURL string) (isFirst bool) {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()
 
+	if len(cfg.pages) >= cfg.maxPages {
+		return false
+	}
+
 	// Already visited
 	if _, ok := cfg.pages[normalizedURL]; ok {
 		return false
@@ -67,7 +72,6 @@ func (cfg *config) addPageVisit(normalizedURL string) (isFirst bool) {
 
 func (cfg *config) crawlPage(rawCurrentURL string) {
 	defer cfg.wg.Done()
-
 	if cfg.concurrencyControl != nil {
 		cfg.concurrencyControl <- struct{}{}
 		defer func() { <-cfg.concurrencyControl }()
