@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"sync"
 	"strconv"
+	"log"
 )
 func main() {
 	args := os.Args[1:]
@@ -50,4 +51,10 @@ func main() {
 	for url, count := range cfg.pages {
 		fmt.Printf("%s %d\n", url, count)
 	}
+
+	err = writeCSVReport(cfg.pages, "report.csv")
+	if err != nil {
+		log.Fatalf("Error writing CSV: %v", err)
+	}
+
 } 
